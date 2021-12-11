@@ -1,12 +1,12 @@
-package zerologadapter_test
+package zerolog_test
 
 import (
 	"bytes"
 	"context"
 	"testing"
 
+	zerologadapter "github.com/jackc/pgx-zerolog"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/log/zerologadapter"
 	"github.com/rs/zerolog"
 )
 
