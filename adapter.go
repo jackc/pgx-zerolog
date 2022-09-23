@@ -4,7 +4,7 @@ package zerolog
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rs/zerolog"
 )
 
@@ -63,18 +63,18 @@ func (pl *Logger) init(options []option) {
 	}
 }
 
-func (pl *Logger) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
+func (pl *Logger) Log(ctx context.Context, level tracelog.LogLevel, msg string, data map[string]interface{}) {
 	var zlevel zerolog.Level
 	switch level {
-	case pgx.LogLevelNone:
+	case tracelog.LogLevelNone:
 		zlevel = zerolog.NoLevel
-	case pgx.LogLevelError:
+	case tracelog.LogLevelError:
 		zlevel = zerolog.ErrorLevel
-	case pgx.LogLevelWarn:
+	case tracelog.LogLevelWarn:
 		zlevel = zerolog.WarnLevel
-	case pgx.LogLevelInfo:
+	case tracelog.LogLevelInfo:
 		zlevel = zerolog.InfoLevel
-	case pgx.LogLevelDebug:
+	case tracelog.LogLevelDebug:
 		zlevel = zerolog.DebugLevel
 	default:
 		zlevel = zerolog.DebugLevel
