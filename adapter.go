@@ -76,6 +76,8 @@ func (pl *Logger) Log(ctx context.Context, level tracelog.LogLevel, msg string, 
 		zlevel = zerolog.InfoLevel
 	case tracelog.LogLevelDebug:
 		zlevel = zerolog.DebugLevel
+	case tracelog.LogLevelTrace:
+		zlevel = zerolog.TraceLevel
 	default:
 		zlevel = zerolog.DebugLevel
 	}
