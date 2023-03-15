@@ -9,10 +9,12 @@ import (
 )
 
 type Logger struct {
-	logger      zerolog.Logger
-	withFunc    func(context.Context, zerolog.Context) zerolog.Context
-	fromContext bool
-	skipModule  bool
+	logger           zerolog.Logger
+	withFunc         func(context.Context, zerolog.Context) zerolog.Context
+	fromContext      bool
+	skipModule       bool
+	subDictionary    bool
+	subDictionaryKey string
 }
 
 // option options for configuring the logger when creating a new logger.
@@ -30,6 +32,14 @@ func WithContextFunc(withFunc func(context.Context, zerolog.Context) zerolog.Con
 func WithoutPGXModule() option {
 	return func(logger *Logger) {
 		logger.skipModule = true
+	}
+}
+
+// WithSubDictionary adds data to sub dictionary with key.
+func WithSubDictionary(key string) option {
+	return func(logger *Logger) {
+		logger.subDictionary = true
+		logger.subDictionaryKey = key
 	}
 }
 
@@ -99,6 +109,13 @@ func (pl *Logger) Log(ctx context.Context, level tracelog.LogLevel, msg string, 
 		if pl.fromContext && !pl.skipModule {
 			event.Str("module", "pgx")
 		}
-		event.Fields(data).Msg(msg)
+
+		if pl.subDictionary {
+			event.Dict(pl.subDictionaryKey, zerolog.Dict().Fields(data))
+		} else {
+			event.Fields(data)
+		}
+
+		event.Msg(msg)
 	}
 }

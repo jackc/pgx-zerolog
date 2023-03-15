@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"testing"
+	"time"
 
 	zerologadapter "github.com/jackc/pgx-zerolog"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/rs/zerolog"
 )
 
@@ -16,7 +17,7 @@ func TestLogger(t *testing.T) {
 		var buf bytes.Buffer
 		zlogger := zerolog.New(&buf)
 		logger := zerologadapter.NewLogger(zlogger)
-		logger.Log(context.Background(), pgx.LogLevelInfo, "hello", map[string]interface{}{"one": "two"})
+		logger.Log(context.Background(), tracelog.LogLevelInfo, "hello", map[string]interface{}{"one": "two"})
 		const want = `{"level":"info","module":"pgx","one":"two","message":"hello"}
 `
 		got := buf.String()
@@ -29,8 +30,27 @@ func TestLogger(t *testing.T) {
 		var buf bytes.Buffer
 		zlogger := zerolog.New(&buf)
 		logger := zerologadapter.NewLogger(zlogger, zerologadapter.WithoutPGXModule())
-		logger.Log(context.Background(), pgx.LogLevelInfo, "hello", nil)
+		logger.Log(context.Background(), tracelog.LogLevelInfo, "hello", nil)
 		const want = `{"level":"info","message":"hello"}
+`
+		got := buf.String()
+		if got != want {
+			t.Errorf("%s != %s", got, want)
+		}
+	})
+
+	t.Run("sub dictionary", func(t *testing.T) {
+		var buf bytes.Buffer
+		zlogger := zerolog.New(&buf).
+			With().
+			Str("time", "example with conflict key").
+			Logger()
+		logger := zerologadapter.NewLogger(zlogger, zerologadapter.WithSubDictionary("custom-pgx"))
+		data := map[string]interface{}{
+			"time": time.Millisecond.String(),
+		}
+		logger.Log(context.Background(), tracelog.LogLevelInfo, "hello", data)
+		const want = `{"level":"info","time":"example with conflict key","module":"pgx","custom-pgx":{"time":"1ms"},"message":"hello"}
 `
 		got := buf.String()
 		if got != want {
@@ -43,7 +63,7 @@ func TestLogger(t *testing.T) {
 		zlogger := zerolog.New(&buf)
 		ctx := zlogger.WithContext(context.Background())
 		logger := zerologadapter.NewContextLogger()
-		logger.Log(ctx, pgx.LogLevelInfo, "hello", map[string]interface{}{"one": "two"})
+		logger.Log(ctx, tracelog.LogLevelInfo, "hello", map[string]interface{}{"one": "two"})
 		const want = `{"level":"info","module":"pgx","one":"two","message":"hello"}
 `
 
@@ -75,7 +95,7 @@ func TestLogger(t *testing.T) {
 	t.Run("no request id", func(t *testing.T) {
 		buf.Reset()
 		ctx := context.Background()
-		logger.Log(ctx, pgx.LogLevelInfo, "hello", nil)
+		logger.Log(ctx, tracelog.LogLevelInfo, "hello", nil)
 		const want = `{"level":"info","module":"pgx","message":"hello"}
 `
 		got := buf.String()
@@ -87,7 +107,7 @@ func TestLogger(t *testing.T) {
 	t.Run("with request id", func(t *testing.T) {
 		buf.Reset()
 		ctx := context.WithValue(context.Background(), ck, "1")
-		logger.Log(ctx, pgx.LogLevelInfo, "hello", map[string]interface{}{"two": "2"})
+		logger.Log(ctx, tracelog.LogLevelInfo, "hello", map[string]interface{}{"two": "2"})
 		const want = `{"level":"info","module":"pgx","req_id":"1","two":"2","message":"hello"}
 `
 		got := buf.String()
